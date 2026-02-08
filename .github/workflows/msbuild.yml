@@ -1,0 +1,41 @@
+name: MSBuild
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        build_configuration: ["Release", "Debug"]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build
+      working-directory: ${{github.workspace}}
+      run: msbuild /m /p:Configuration=${{matrix.build_configuration}} .
+
+    - run: mv bin\${{matrix.build_configuration}}-x86\*.dll,bin\${{matrix.build_configuration}}-x86\*.pdb .
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{matrix.build_configuration}}-${{github.sha}}
+        path: |
+          *.dll
+          *.pdb

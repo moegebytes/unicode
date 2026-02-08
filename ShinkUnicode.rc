@@ -1,0 +1,31 @@
+#include <winres.h>
+
+VS_VERSION_INFO VERSIONINFO
+	FILEVERSION 1,2,0,95
+	PRODUCTVERSION 1,2,0,0
+	FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+	FILEFLAGS VS_FF_DEBUG
+#else
+	FILEFLAGS 0
+#endif
+	FILEOS VOS__WINDOWS32
+	FILETYPE VFT_DLL
+BEGIN
+	BLOCK "StringFileInfo"
+	BEGIN
+		BLOCK "040904b0"
+		BEGIN
+			VALUE "CompanyName", "Moegebytes"
+			VALUE "FileDescription", "Unicode compatibility layer for FVP"
+			VALUE "FileVersion", "1.2.0.95"
+			VALUE "LegalCopyright", "Copyright (C) 2026 Moegebytes"
+			VALUE "ProductName", "ShinkUnicode"
+			VALUE "ProductVersion", "1.2.0"
+		END
+	END
+	BLOCK "VarFileInfo"
+	BEGIN
+		VALUE "Translation", 0, 1200
+	END
+END
