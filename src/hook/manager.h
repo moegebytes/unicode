@@ -2,7 +2,6 @@
 
 #include "..\pch.h"
 #include "..\..\vendor\detours\src\detours.h"
-#include <map>
 
 class HookManager {
 public:

@@ -14,8 +14,6 @@ namespace FVP {
 
 namespace FVP {
 	bool Hook::MoviePlayer::InitFilter(void* instance, const char* fname) {
-		DbgPrintVerbose("Intercepted MoviePlayer::InitFilter with fname=" << fname);
-
 		if (!Util::IsWineEnvironment()) {
 			return HookManager::Call(InitFilter, instance, fname);
 		}
@@ -25,7 +23,7 @@ namespace FVP {
 			path.replace_extension(".webm");
 		}
 
-		DbgPrintVerbose("Adjusting MoviePlayer::InitFilter to fname=" << path);
+		DbgPrintVerbose("Intercepted MoviePlayer::InitFilter with fname=" << fname);
 
 		return HookManager::Call(InitFilter, instance, path.string().c_str());
 	}
