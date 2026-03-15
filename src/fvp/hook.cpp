@@ -122,9 +122,9 @@ namespace FVP {
 				int frameW = frame.right - frame.left;
 				int frameH = frame.bottom - frame.top;
 
-				RECT* rect = (RECT*)lParam;
-				int clientW = (rect->right - rect->left) - frameW;
-				int clientH = (rect->bottom - rect->top) - frameH;
+				RECT* client = (RECT*)lParam;
+				int clientW = (client->right - client->left) - frameW;
+				int clientH = (client->bottom - client->top) - frameH;
 
 				switch (wParam) {
 					case WMSZ_LEFT:
@@ -152,10 +152,10 @@ namespace FVP {
 					case WMSZ_LEFT:
 					case WMSZ_TOPLEFT:
 					case WMSZ_BOTTOMLEFT:
-						rect->left = rect->right - totalW;
+						client->left = client->right - totalW;
 						break;
 					default:
-						rect->right = rect->left + totalW;
+						client->right = client->left + totalW;
 						break;
 				}
 
@@ -163,10 +163,10 @@ namespace FVP {
 					case WMSZ_TOP:
 					case WMSZ_TOPLEFT:
 					case WMSZ_TOPRIGHT:
-						rect->top = rect->bottom - totalH;
+						client->top = client->bottom - totalH;
 						break;
 					default:
-						rect->bottom = rect->top + totalH;
+						client->bottom = client->top + totalH;
 						break;
 				}
 
@@ -258,11 +258,17 @@ namespace FVP {
 					};
 					AdjustWindowRectEx(&rc, dwStyle, FALSE, 0);
 
-					int w = rc.right - rc.left;
-					int h = rc.bottom - rc.top;
-					int x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
-					int y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
-					SetWindowPos(hWnd, NULL, x, y, w, h, SWP_NOZORDER);
+					int cx = rc.right - rc.left;
+					int cy = rc.bottom - rc.top;
+					SetWindowPos(
+						hWnd,
+						NULL,
+						(GetSystemMetrics(SM_CXSCREEN) - cx) / 2,
+						(GetSystemMetrics(SM_CYSCREEN) - cy) / 2,
+						cx,
+						cy,
+						SWP_NOZORDER
+					);
 				}
 
 				RECT rc;
