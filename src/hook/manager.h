@@ -1,7 +1,7 @@
 #pragma once
 
 #include "..\pch.h"
-#include "..\..\vendor\detours\src\detours.h"
+#include <detours.h>
 
 class HookManager {
 public:

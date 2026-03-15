@@ -194,7 +194,7 @@ namespace Win32 {
 
 		auto pszWideFaceName = pszFaceName ? Util::NarrowToWide(932, pszFaceName) : NULL;
 
-		return CreateFontW(cHeight, 0, cEscapement, cOrientation, cWeight, bItalic, bUnderline, bStrikeOut, SHIFTJIS_CHARSET, iOutPrecision, 
+		return CreateFontW(cHeight, 0, cEscapement, cOrientation, cWeight, bItalic, bUnderline, bStrikeOut, ANSI_CHARSET, iOutPrecision, 
 			iClipPrecision, iQuality, iPitchAndFamily, pszWideFaceName.get());
 	}
 

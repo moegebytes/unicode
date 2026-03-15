@@ -4,7 +4,7 @@
 
 namespace FVP {
 	void Font::Load() {
-		const std::filesystem::path directory{Util::GetProcessParentPath()/"font"};
+		const std::filesystem::path directory{Util::GetProcessParentPath() / "font"};
 
 		if (!std::filesystem::exists(directory) || !std::filesystem::is_directory(directory)) {
 			return;
