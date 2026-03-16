@@ -11,15 +11,15 @@ namespace FVP {
 	}
 
 	SIZE Window::GetDefaultClientSize(int gameW, int gameH) {
-		double scaleW = (double)GetSystemMetrics(SM_CXSCREEN) * 2.0 / 3.0 / (double)gameW;
-		double scaleH = (double)GetSystemMetrics(SM_CYSCREEN) * 2.0 / 3.0 / (double)gameH;
+		double scaleW = static_cast<double>(GetSystemMetrics(SM_CXSCREEN)) * 2.0 / 3.0 / static_cast<double>(gameW);
+		double scaleH = static_cast<double>(GetSystemMetrics(SM_CYSCREEN)) * 2.0 / 3.0 / static_cast<double>(gameH);
 
 		auto scale = (scaleW < scaleH) ? scaleW : scaleH;
 		if (scale >= 1.0) {
 			return { gameW, gameH };
 		}
 
-		return { (LONG)(gameW * scale), (LONG)(gameH * scale) };
+		return { static_cast<LONG>(gameW * scale), static_cast<LONG>(gameH * scale) };
 	}
 
 	void Window::UpdateScreen(void* self, int w, int h) {

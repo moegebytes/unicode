@@ -13,10 +13,11 @@ public:
 
 	template <typename Fn>
 	static Fn GetOrigin(Fn handler) noexcept {
-		if (HolderMap.count(reinterpret_cast<void*>(handler)) == 0) {
+		auto it = HolderMap.find(reinterpret_cast<void*>(handler));
+		if (it == HolderMap.end()) {
 			return nullptr;
 		}
-		return reinterpret_cast<Fn>(HolderMap[reinterpret_cast<void *>(handler)]);
+		return reinterpret_cast<Fn>(it->second);
 	}
 
 	template <typename Fn>
@@ -80,7 +81,7 @@ public:
 	}
 
 private:
-	inline static std::map<void*, void*> HolderMap{};
+	inline static std::unordered_map<void*, void*> HolderMap{};
 
 	template <typename Fn>
 	static void Disable(Fn handler) {

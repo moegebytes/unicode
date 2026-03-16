@@ -27,6 +27,7 @@ namespace Win32 {
 			CreateWindowExA);
 		HookManager::Install((LRESULT(WINAPI *) (HWND, UINT, WPARAM, LPARAM))GetProcAddress(hUser32, "DefWindowProcA"), DefWindowProcA);
 		HookManager::Install((LRESULT(WINAPI *) (MSG*))GetProcAddress(hUser32, "DispatchMessageA"), DispatchMessageA);
+		HookManager::Install((int(WINAPI *) (HINSTANCE, UINT, LPSTR, int))GetProcAddress(hUser32, "LoadStringA"), LoadStringA);
 
 		const auto hWinmm = GetModuleHandle(L"winmm.dll");
 		HookManager::Install((HMMIO(WINAPI *) (LPSTR, LPMMIOINFO, DWORD))GetProcAddress(hWinmm, "mmioOpenA"), mmioOpenA);
@@ -42,12 +43,12 @@ namespace Win32 {
 
 	UINT WINAPI Hook::GetOEMCP() {
 		DbgPrintVerbose("Intercepted GetOEMCP");
-		return (UINT)932;
+		return (UINT)CP_SHIFT_JIS;
 	}
 
 	UINT WINAPI Hook::GetACP() {
 		DbgPrintVerbose("Intercepted GetACP");
-		return (UINT)932;
+		return (UINT)CP_SHIFT_JIS;
 	}
 
 	BOOL WINAPI Hook::GetCPInfo(UINT CodePage, LPCPINFO lpCPInfo) {
@@ -56,7 +57,7 @@ namespace Win32 {
 		}
 
 		DbgPrintVerbose("Intercepted GetCPInfo with CodePage=" << CodePage);
-		return HookManager::Call(GetCPInfo, (UINT)932, lpCPInfo);
+		return HookManager::Call(GetCPInfo, (UINT)CP_SHIFT_JIS, lpCPInfo);
 	}
 
 	int WINAPI Hook::lstrcmpiA(LPCSTR lpString1, LPCSTR lpString2) {
@@ -70,7 +71,7 @@ namespace Win32 {
 		DbgPrintVerbose("Intercepted CreateFileA with lpFileName=" << lpFileName);
 
 		return CreateFileW(
-			Util::NarrowToWide(932, lpFileName).get(), dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
+			Util::NarrowToWide(CP_SHIFT_JIS, lpFileName).get(), dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
 			dwFlagsAndAttributes, hTemplateFile);
 	}
 
@@ -80,7 +81,7 @@ namespace Win32 {
 		}
 
 		DbgPrintVerbose("Intercepted MultiByteToWideChar with CodePage=" << CodePage << ",lpMultiByteStr=" << lpMultiByteStr);
-		return HookManager::Call(MultiByteToWideChar, (UINT)932, dwFlags, lpMultiByteStr, cbMultiByte, lpWideCharStr, ccWideChar);
+		return HookManager::Call(MultiByteToWideChar, (UINT)CP_SHIFT_JIS, dwFlags, lpMultiByteStr, cbMultiByte, lpWideCharStr, ccWideChar);
 	}
 
 	int WINAPI Hook::WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte,
@@ -92,15 +93,15 @@ namespace Win32 {
 		}
 
 		DbgPrintVerbose("Intercepted WideCharToMultiByte with CodePage=" << CodePage << ",lpWideCharStr=" << lpWideCharStr);
-		return HookManager::Call(WideCharToMultiByte, (UINT)932, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cbMultiByte, 
+		return HookManager::Call(WideCharToMultiByte, (UINT)CP_SHIFT_JIS, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cbMultiByte, 
 			lpDefaultChar, lpUsedDefaultChar);
 	}
 
 	int WINAPI Hook::MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) {
 		DbgPrintVerbose("Intercepted MessageBoxA with lpText=" << Nullable(lpText) << ",lpCaption=" << Nullable(lpCaption));
 
-		auto lpWideText = lpText ? Util::NarrowToWide(932, lpText) : NULL;
-		auto lpWideCaption = lpCaption ? Util::NarrowToWide(932, lpCaption) : NULL;
+		auto lpWideText = lpText ? Util::NarrowToWide(CP_SHIFT_JIS, lpText) : nullptr;
+		auto lpWideCaption = lpCaption ? Util::NarrowToWide(CP_SHIFT_JIS, lpCaption) : nullptr;
 
 		return MessageBoxW(hWnd, lpWideText.get(), lpWideCaption.get(), uType);
 	}
@@ -109,7 +110,7 @@ namespace Win32 {
 		// WNDCLASSEX.lpszClassName is defined as being either null-terminated string or ATOM, but passing
 		// value of ATOM type to RegisterClassEx is invalid scenario, so we do not check for it here, like
 		// we do in CreateWindowsEx below.
-		if (strcmp(lpWndClassA->lpszClassName, "HS_MAIN_WINDOW_CLASS00")) {
+		if (strcmp(lpWndClassA->lpszClassName, "HS_MAIN_WINDOW_CLASS00") != 0) {
 			return HookManager::Call(RegisterClassExA, lpWndClassA);
 		}
 
@@ -117,8 +118,8 @@ namespace Win32 {
 
 		// Ensure we bind unique_ptr to current scope, so that its usage in initialization of lpWndClassW is valid
 		// and does not cause deallocation before call to RegisterClassExW.
-		auto lpszWideMenuName = lpWndClassA->lpszMenuName ? Util::NarrowToWide(932, lpWndClassA->lpszMenuName) : NULL;
-		auto lpszWideClassName = Util::NarrowToWide(932, lpWndClassA->lpszClassName);
+		auto lpszWideMenuName = lpWndClassA->lpszMenuName ? Util::NarrowToWide(CP_SHIFT_JIS, lpWndClassA->lpszMenuName) : nullptr;
+		auto lpszWideClassName = Util::NarrowToWide(CP_SHIFT_JIS, lpWndClassA->lpszClassName);
 
 		// Passing lpfnWndProc as-is is fine, as FVP callbacks do not process any messages which might contain
 		// strings as parameters.
@@ -146,15 +147,15 @@ namespace Win32 {
 	HWND WINAPI Hook::CreateWindowExA(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight,
 		HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam
 	) {
-		if (IS_ATOM(lpClassName) || strcmp(lpClassName, "HS_MAIN_WINDOW_CLASS00")) {
+		if (IS_ATOM(lpClassName) || strcmp(lpClassName, "HS_MAIN_WINDOW_CLASS00") != 0) {
 			return HookManager::Call(CreateWindowExA, dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, 
 				hInstance, lpParam);
 		}
 
 		DbgPrintVerbose("Intercepted CreateWindowExA with lpClassName=" << lpClassName << ",lpWindowName=" << Nullable(lpWindowName));
 
-		auto lpWideClassName = Util::NarrowToWide(932, lpClassName);
-		auto lpWideWindowName = lpWindowName ? Util::NarrowToWide(932, lpWindowName) : NULL;
+		auto lpWideClassName = Util::NarrowToWide(CP_SHIFT_JIS, lpClassName);
+		auto lpWideWindowName = lpWindowName ? Util::NarrowToWide(CP_SHIFT_JIS, lpWindowName) : nullptr;
 
 		return CreateWindowExW(dwExStyle, lpWideClassName.get(), lpWideWindowName.get(),
 			dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
@@ -178,13 +179,32 @@ namespace Win32 {
 		return DispatchMessageW(lpMsg);
 	}
 
+	int WINAPI Hook::LoadStringA(HINSTANCE hInstance, UINT uID, LPSTR lpBuffer, int cchBufferMax) {
+		if (!lpBuffer || cchBufferMax <= 0) {
+			return HookManager::Call(LoadStringA, hInstance, uID, lpBuffer, cchBufferMax);
+		}
+
+		DbgPrintVerbose("Intercepted LoadStringA with uID=" << uID);
+
+		wchar_t lpWideBuffer[MAX_PATH] = {};
+		if (LoadStringW(hInstance, uID, lpWideBuffer, MAX_PATH) <= 0) {
+			return HookManager::Call(LoadStringA, hInstance, uID, lpBuffer, cchBufferMax);
+		}
+
+		auto lpNarrowBuffer = Util::WideToNarrow(CP_SHIFT_JIS, lpWideBuffer);
+		auto lpNarrowBufferLen = strlen(lpNarrowBuffer.get());
+
+		strncpy_s(lpBuffer, cchBufferMax, lpNarrowBuffer.get(), lpNarrowBufferLen);
+		return lpNarrowBufferLen;
+	}
+
 	HMMIO WINAPI Hook::mmioOpenA(LPSTR pszFileName, LPMMIOINFO pmmioinfo, DWORD fdwOpen) {
 		if (!pszFileName) {
 			return HookManager::Call(mmioOpenA, pszFileName, pmmioinfo, fdwOpen);
 		}
 
 		DbgPrintVerbose("Intercepted mmioOpenA with pszFileName=" << pszFileName);
-		return mmioOpenW(Util::NarrowToWide(932, pszFileName).get(), pmmioinfo, fdwOpen);
+		return mmioOpenW(Util::NarrowToWide(CP_SHIFT_JIS, pszFileName).get(), pmmioinfo, fdwOpen);
 	}
 
 	HFONT WINAPI Hook::CreateFontA(int cHeight, int cWidth, int cEscapement, int cOrientation, int cWeight, DWORD bItalic, DWORD bUnderline,
@@ -192,7 +212,7 @@ namespace Win32 {
 	) {
 		DbgPrintVerbose("Intercepted CreateFontA with iCharSet=" << iCharSet << ",pszFaceName=" << Nullable(pszFaceName));
 
-		auto pszWideFaceName = pszFaceName ? Util::NarrowToWide(932, pszFaceName) : NULL;
+		auto pszWideFaceName = pszFaceName ? Util::NarrowToWide(CP_SHIFT_JIS, pszFaceName) : nullptr;
 
 		return CreateFontW(cHeight, 0, cEscapement, cOrientation, cWeight, bItalic, bUnderline, bStrikeOut, ANSI_CHARSET, iOutPrecision, 
 			iClipPrecision, iQuality, iPitchAndFamily, pszWideFaceName.get());

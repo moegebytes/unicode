@@ -3,13 +3,11 @@
 
 #include "framework.h"
 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <filesystem>
-#include <map>
-
-#include <assert.h>
+#include <unordered_map>
+#include <cassert>
 
 #include "log.h"
 #include "win32i.h"

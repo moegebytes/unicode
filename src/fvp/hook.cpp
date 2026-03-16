@@ -84,8 +84,8 @@ namespace FVP {
 	LRESULT Hook::Window::WndProc(void* self, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		DbgPrintVerbose("Intercepted Window::WndProc with uMsg=" << uMsg);
 
-		double aspect = (double)FAVS::Field<int>(self, FAVS::Engine::Fields::GameW) / 
-			(double)FAVS::Field<int>(self, FAVS::Engine::Fields::GameH);
+		double aspect = static_cast<double>(FAVS::Field<int>(self, FAVS::Engine::Fields::GameW)) /
+			static_cast<double>(FAVS::Field<int>(self, FAVS::Engine::Fields::GameH));
 
 		switch (uMsg) {
 			case WM_GETMINMAXINFO: {
@@ -127,17 +127,17 @@ namespace FVP {
 				switch (wParam) {
 					case WMSZ_LEFT:
 					case WMSZ_RIGHT:
-						clientH = (int)(clientW / aspect);
+						clientH = static_cast<int>(clientW / aspect);
 						break;
 					case WMSZ_TOP:
 					case WMSZ_BOTTOM:
-						clientW = (int)(clientH * aspect);
+						clientW = static_cast<int>(clientH * aspect);
 						break;
 					default: {
-						if (((double)clientW / (double)clientH) > aspect) {
-							clientW = (int)(clientH * aspect);
+						if (static_cast<double>(clientW) / static_cast<double>(clientH) > aspect) {
+							clientW = static_cast<int>(clientH * aspect);
 						} else {
-							clientH = (int)(clientW / aspect);
+							clientH = static_cast<int>(clientW / aspect);
 						}
 						break;
 					}

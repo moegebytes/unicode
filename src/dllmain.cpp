@@ -21,7 +21,7 @@ BOOL APIENTRY DllMain(HMODULE hInstance, DWORD fdwReason, LPVOID lpReserved) {
 			break;
 	}
 
-	return true;
+	return TRUE;
 }
 
 extern "C" __declspec(dllexport) VOID ShinkUnicode() {

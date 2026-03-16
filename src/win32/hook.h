@@ -27,6 +27,7 @@ namespace Win32 {
 		);
 		static LRESULT WINAPI DefWindowProcA(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 		static LRESULT WINAPI DispatchMessageA(MSG* lpMsg);
+		static int WINAPI LoadStringA(HINSTANCE hInstance, UINT uID, LPSTR lpBuffer, int cchBufferMax);
 
 		static HMMIO WINAPI mmioOpenA(LPSTR pszFileName, LPMMIOINFO pmmioinfo, DWORD fdwOpen);
 
