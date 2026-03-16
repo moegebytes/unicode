@@ -4,10 +4,22 @@
 #include "..\util\describe.h"
 
 namespace FVP {
-#if FVP_ENGINE_VER >= 10002
+#if FVP_GAME_ID >= HOSHINOMEMORIA
 	inline std::filesystem::path Window::GetPlacementPath(void* instance) {
 		const char* base = FAVS::Field<const char*>(instance, FAVS::Engine::Fields::LocalDataPath);
 		return std::filesystem::path(base) / "window.bin";
+	}
+
+	SIZE Window::GetDefaultClientSize(int gameW, int gameH) {
+		double scaleW = (double)GetSystemMetrics(SM_CXSCREEN) * 2.0 / 3.0 / (double)gameW;
+		double scaleH = (double)GetSystemMetrics(SM_CYSCREEN) * 2.0 / 3.0 / (double)gameH;
+
+		auto scale = (scaleW < scaleH) ? scaleW : scaleH;
+		if (scale >= 1.0) {
+			return { gameW, gameH };
+		}
+
+		return { (LONG)(gameW * scale), (LONG)(gameH * scale) };
 	}
 
 	void Window::UpdateScreen(void* self, int w, int h) {
@@ -21,15 +33,15 @@ namespace FVP {
 	}
 
 	void Window::SavePlacement(void* instance, HWND hWnd) {
-		RECT client;
-		if (!GetClientRect(hWnd, &client)) {
+		RECT rc;
+		if (!GetClientRect(hWnd, &rc)) {
 			DbgPrintVerbose("Unable to retrieve window dimensions; code=" << GetLastError());
 			return;
 		}
 
 		PlacementData data = {
-			client.right,
-			client.bottom
+			rc.right,
+			rc.bottom
 		};
 
 		auto path = GetPlacementPath(instance).string();

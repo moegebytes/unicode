@@ -14,6 +14,6 @@
 #include "log.h"
 #include "win32i.h"
 #include "lcid.h"
-#include "fvp.h"
+#include "game.h"
 
 #endif // PCH_H

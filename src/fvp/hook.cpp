@@ -7,7 +7,7 @@
 #include "..\util\env.h"
 
 namespace FVP {
-#if FVP_ENGINE_VER >= 10002
+#if FVP_GAME_ID >= HOSHINOMEMORIA
 	bool Hook::Window::bIsResizing = false;
 #endif
 
@@ -15,7 +15,7 @@ namespace FVP {
 		const auto hEngine = (uintptr_t)GetModuleHandle(NULL);
 		HookManager::Install((bool(__thiscall*)(void*, const char*))(hEngine + FAVS::MoviePlayer::InitFilter),
 			Hook::MoviePlayer::InitFilter);
-#if FVP_ENGINE_VER >= 10002
+#if FVP_GAME_ID >= HOSHINOMEMORIA
 		HookManager::Install(
 			(HWND(__thiscall*)(void*))(hEngine + FAVS::Engine::InitWindow),
 			Hook::Window::InitWindow);
@@ -42,7 +42,7 @@ namespace FVP {
 		return HookManager::Call(InitFilter, self, path.string().c_str());
 	}
 
-#if FVP_ENGINE_VER >= 10002
+#if FVP_GAME_ID >= HOSHINOMEMORIA
 	HWND Hook::Window::InitWindow(void* self) {
 		DbgPrintVerbose("Intercepted Window::InitWindow");
 
@@ -91,14 +91,12 @@ namespace FVP {
 			case WM_GETMINMAXINFO: {
 				MINMAXINFO* mmi = (MINMAXINFO*)lParam;
 
-				DWORD dwStyle = FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle);
-				RECT rc = {
-					0,
-					0,
-					FAVS::Field<int>(self, FAVS::Engine::Fields::GameW) * 2 / 3,
-					FAVS::Field<int>(self, FAVS::Engine::Fields::GameH) * 2 / 3
-				};
-				AdjustWindowRectEx(&rc, dwStyle, FALSE, 0);
+				SIZE defSize = FVP::Window::GetDefaultClientSize(
+					FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
+					FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
+				);
+				RECT rc = { 0, 0, defSize.cx, defSize.cy };
+				AdjustWindowRectEx(&rc, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
 
 				mmi->ptMinTrackSize.x = rc.right - rc.left;
 				mmi->ptMinTrackSize.y = rc.bottom - rc.top;
@@ -108,7 +106,7 @@ namespace FVP {
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
 				};
-				AdjustWindowRectEx(&rc, dwStyle, FALSE, 0);
+				AdjustWindowRectEx(&rc, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
 
 				mmi->ptMaxTrackSize.x = rc.right - rc.left;
 				mmi->ptMaxTrackSize.y = rc.bottom - rc.top;
@@ -208,7 +206,7 @@ namespace FVP {
 					break;
 				}
 
-				void* pRender = FAVS::Field<void*>(self, FAVS::Engine::Fields::Render);
+				auto pRender = FAVS::Field<void*>(self, FAVS::Engine::Fields::Render);
 				if (!pRender || !FAVS::Field<void*>(pRender, FAVS::Render::Fields::D3DDev)) {
 					break;
 				}
@@ -234,7 +232,7 @@ namespace FVP {
 					break;
 				}
 
-				void* pRender = FAVS::Field<void*>(self, FAVS::Engine::Fields::Render);
+				auto pRender = FAVS::Field<void*>(self, FAVS::Engine::Fields::Render);
 				if (!pRender || !FAVS::Field<void*>(pRender, FAVS::Render::Fields::D3DDev)) {
 					break;
 				}
@@ -249,14 +247,13 @@ namespace FVP {
 			}
 
 			case WM_RESTORE_PLACEMENT: {
-				DWORD dwStyle = FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle);
-				if (!FVP::Window::RestorePlacement(self, hWnd, dwStyle)) {
-					RECT rc = {
-						0, 0,
-						FAVS::Field<int>(self, FAVS::Engine::Fields::GameW) * 2 / 3,
-						FAVS::Field<int>(self, FAVS::Engine::Fields::GameH) * 2 / 3
-					};
-					AdjustWindowRectEx(&rc, dwStyle, FALSE, 0);
+				if (!FVP::Window::RestorePlacement(self, hWnd, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle))) {
+					SIZE defSize = FVP::Window::GetDefaultClientSize(
+						FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
+						FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
+					);
+					RECT rc = { 0, 0, defSize.cx, defSize.cy };
+					AdjustWindowRectEx(&rc, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
 
 					int cx = rc.right - rc.left;
 					int cy = rc.bottom - rc.top;
@@ -274,7 +271,7 @@ namespace FVP {
 				RECT rc;
 				GetClientRect(hWnd, &rc);
 				if (rc.right > 0 && rc.bottom > 0) {
-					void* pRender = FAVS::Field<void*>(self, FAVS::Engine::Fields::Render);
+					auto pRender = FAVS::Field<void*>(self, FAVS::Engine::Fields::Render);
 					if (pRender && FAVS::Field<void*>(pRender, FAVS::Render::Fields::D3DDev)) {
 						FVP::Window::UpdateScreen(self, rc.right, rc.bottom);
 						FVP::Render::ResetDevice(pRender);

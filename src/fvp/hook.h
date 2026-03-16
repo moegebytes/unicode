@@ -12,7 +12,7 @@ namespace FVP {
 			static bool __thiscall InitFilter(void* instance, const char* fname);
 		};
 
-#if FVP_ENGINE_VER >= 10002
+#if FVP_GAME_ID >= HOSHINOMEMORIA
 		class Window {
 		public:
 			static HWND __thiscall InitWindow(void* instance);
