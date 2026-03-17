@@ -9,18 +9,20 @@ namespace FVP {
 	private:
 		class MoviePlayer {
 		public:
-			static bool __thiscall InitFilter(void* instance, const char* fname);
+			static bool __thiscall InitFilter(void* self, const char* fname);
 		};
 
-#if FVP_GAME_ID >= HOSHINOMEMORIA
-		class Window {
+		class Engine {
 		public:
-			static HWND __thiscall InitWindow(void* instance);
-			static LRESULT __thiscall WndProc(void* instance, HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+#if FVP_GAME_ID >= HOSHINOMEMORIA
+			static HWND __thiscall InitWindow(void* self);
+			static LRESULT __thiscall PrimaryWindowProcA(void* self, HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+#endif
 		private:
+#if FVP_GAME_ID >= HOSHINOMEMORIA
 			static constexpr UINT WM_RESTORE_PLACEMENT = WM_USER + 0x3BFF;
 			static bool bIsResizing;
-		};
 #endif
+		};
 	};
 }

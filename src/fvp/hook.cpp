@@ -8,7 +8,7 @@
 
 namespace FVP {
 #if FVP_GAME_ID >= HOSHINOMEMORIA
-	bool Hook::Window::bIsResizing = false;
+	bool Hook::Engine::bIsResizing = false;
 #endif
 
 	void Hook::Install() {
@@ -18,15 +18,13 @@ namespace FVP {
 #if FVP_GAME_ID >= HOSHINOMEMORIA
 		HookManager::Install(
 			(HWND(__thiscall*)(void*))(hEngine + FAVS::Engine::InitWindow),
-			Hook::Window::InitWindow);
+			Hook::Engine::InitWindow);
 		HookManager::Install(
 			(LRESULT(__thiscall*)(void*, HWND, UINT, WPARAM, LPARAM))(hEngine + FAVS::Engine::PrimaryWindowProcA),
-			Hook::Window::WndProc);
+			Hook::Engine::PrimaryWindowProcA);
 #endif
 	}
-}
 
-namespace FVP {
 	bool Hook::MoviePlayer::InitFilter(void* self, const char* fname) {
 		if (!Util::IsWineEnvironment()) {
 			return HookManager::Call(InitFilter, self, fname);
@@ -43,8 +41,8 @@ namespace FVP {
 	}
 
 #if FVP_GAME_ID >= HOSHINOMEMORIA
-	HWND Hook::Window::InitWindow(void* self) {
-		DbgPrintVerbose("Intercepted Window::InitWindow");
+	HWND Hook::Engine::InitWindow(void* self) {
+		DbgPrintVerbose("Intercepted Engine::InitWindow");
 
 		HWND hGameWnd = HookManager::Call(InitWindow, self);
 
@@ -81,8 +79,8 @@ namespace FVP {
 		return hGameWnd;
 	}
 
-	LRESULT Hook::Window::WndProc(void* self, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-		DbgPrintVerbose("Intercepted Window::WndProc with uMsg=" << uMsg);
+	LRESULT Hook::Engine::PrimaryWindowProcA(void* self, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+		DbgPrintVerbose("Intercepted Engine::PrimaryWindowProcA with uMsg=" << uMsg);
 
 		double aspect = static_cast<double>(FAVS::Field<int>(self, FAVS::Engine::Fields::GameW)) /
 			static_cast<double>(FAVS::Field<int>(self, FAVS::Engine::Fields::GameH));
@@ -224,7 +222,7 @@ namespace FVP {
 					FVP::Render::ResetDevice(pRender);
 				}
 
-				return HookManager::Call(WndProc, self, hWnd, uMsg, wParam, lParam);
+				return HookManager::Call(PrimaryWindowProcA, self, hWnd, uMsg, wParam, lParam);
 			}
 
 			case WM_SHOWWINDOW: {
@@ -281,7 +279,7 @@ namespace FVP {
 			}
 		}
 
-		return HookManager::Call(WndProc, self, hWnd, uMsg, wParam, lParam);
+		return HookManager::Call(PrimaryWindowProcA, self, hWnd, uMsg, wParam, lParam);
 	}
 #endif
 }

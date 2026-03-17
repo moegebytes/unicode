@@ -1,15 +1,8 @@
 #include "..\pch.h"
 #include "window.h"
-#include "engine.h"
 #include "..\util\describe.h"
 
 namespace FVP {
-#if FVP_GAME_ID >= HOSHINOMEMORIA
-	inline std::filesystem::path Window::GetPlacementPath(void* instance) {
-		const char* base = FAVS::Field<const char*>(instance, FAVS::Engine::Fields::LocalDataPath);
-		return std::filesystem::path(base) / "window.bin";
-	}
-
 	SIZE Window::GetDefaultClientSize(int gameW, int gameH) {
 		double scaleW = static_cast<double>(GetSystemMetrics(SM_CXSCREEN)) * 2.0 / 3.0 / static_cast<double>(gameW);
 		double scaleH = static_cast<double>(GetSystemMetrics(SM_CYSCREEN)) * 2.0 / 3.0 / static_cast<double>(gameH);
@@ -22,6 +15,7 @@ namespace FVP {
 		return { static_cast<LONG>(gameW * scale), static_cast<LONG>(gameH * scale) };
 	}
 
+#if FVP_GAME_ID >= HOSHINOMEMORIA
 	void Window::UpdateScreen(void* self, int w, int h) {
 		FAVS::Field<DWORD>(self, FAVS::Engine::Fields::ScreenW) = w;
 		FAVS::Field<DWORD>(self, FAVS::Engine::Fields::ScreenH) = h;
@@ -32,7 +26,7 @@ namespace FVP {
 		}
 	}
 
-	void Window::SavePlacement(void* instance, HWND hWnd) {
+	void Window::SavePlacement(void* engine, HWND hWnd) {
 		RECT rc;
 		if (!GetClientRect(hWnd, &rc)) {
 			DbgPrintVerbose("Unable to retrieve window dimensions; code=" << GetLastError());
@@ -44,7 +38,7 @@ namespace FVP {
 			rc.bottom
 		};
 
-		auto path = GetPlacementPath(instance).string();
+		auto path = GetPlacementPath(engine).string();
 		HANDLE hFile = CreateFileA(path.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile == INVALID_HANDLE_VALUE) {
 			DbgPrint("Failed to persist window state; code=" << GetLastError());
@@ -60,8 +54,8 @@ namespace FVP {
 		}
 	}
 
-	bool Window::RestorePlacement(void* instance, HWND hWnd, DWORD dwStyle) {
-		auto path = GetPlacementPath(instance).string();
+	bool Window::RestorePlacement(void* engine, HWND hWnd, DWORD dwStyle) {
+		auto path = GetPlacementPath(engine).string();
 		HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 		if (hFile == INVALID_HANDLE_VALUE) {
 			DbgPrint("Failed to restore window state; code=" << GetLastError());

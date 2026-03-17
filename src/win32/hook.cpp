@@ -214,7 +214,7 @@ namespace Win32 {
 
 		auto pszWideFaceName = pszFaceName ? Util::NarrowToWide(CP_SHIFT_JIS, pszFaceName) : nullptr;
 
-		return CreateFontW(cHeight, 0, cEscapement, cOrientation, cWeight, bItalic, bUnderline, bStrikeOut, ANSI_CHARSET, iOutPrecision, 
+		return CreateFontW(cHeight, 0, cEscapement, cOrientation, cWeight, bItalic, bUnderline, bStrikeOut, SHIFTJIS_CHARSET, iOutPrecision, 
 			iClipPrecision, iQuality, iPitchAndFamily, pszWideFaceName.get());
 	}
 
@@ -226,7 +226,7 @@ namespace Win32 {
 			lParam
 		};
 
-		lpLogfont->lfCharSet = ANSI_CHARSET;
+		lpLogfont->lfCharSet = ANSI_CHARSET; // Generally, all fonts supporting SHIFTJIS_CHARSET also support ANSI_CHARSET
 		return HookManager::Call(EnumFontFamiliesExA, hdc, lpLogfont, Callback::EnumFontFamExProcA, (LPARAM)&sParam, dwFlags);
 	}
 }

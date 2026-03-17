@@ -3,8 +3,8 @@
 #include "engine.h"
 
 namespace FVP {
-	void Render::ResetDevice(void* render) {
+	void Render::ResetDevice(void* self) {
 		auto fn = (char(__thiscall*)(void*, bool))((uintptr_t)GetModuleHandle(NULL) + FAVS::Render::ResetDevice);
-		fn(render, true);
+		fn(self, true);
 	}
 }
