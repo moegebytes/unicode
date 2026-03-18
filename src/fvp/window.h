@@ -6,12 +6,13 @@
 namespace FVP {
 	class Window {
 	public:
-		static SIZE GetDefaultClientSize(int gameW, int gameH);
+		static SIZE GetOptimalWindowSize(int gameW, int gameH);
+		static SIZE GetMinimumWindowSize(int gameW, int gameH);
 
 #if FVP_GAME_ID >= HOSHINOMEMORIA
 		static void UpdateScreen(void* engine, int w, int h);
-		static void SavePlacement(void* engine, HWND hWnd);
-		static bool RestorePlacement(void* engine, HWND hWnd, DWORD dwStyle);
+		static void SaveDimensions(void* engine, HWND hWnd);
+		static bool RestoreDimensions(void* engine, HWND hWnd, DWORD dwStyle);
 #endif
 	private:
 #if FVP_GAME_ID >= HOSHINOMEMORIA
@@ -20,7 +21,7 @@ namespace FVP {
 			LONG height;
 		};
 
-		static inline std::filesystem::path GetPlacementPath(void* engine) {
+		inline static std::filesystem::path GetPersistPath(void* engine) {
 			const char* base = FAVS::Field<const char*>(engine, FAVS::Engine::Fields::LocalDataPath);
 			return std::filesystem::path(base) / "window.bin";
 		}

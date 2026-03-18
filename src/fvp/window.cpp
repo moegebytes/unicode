@@ -3,30 +3,45 @@
 #include "..\util\describe.h"
 
 namespace FVP {
-	SIZE Window::GetDefaultClientSize(int gameW, int gameH) {
+	SIZE Window::GetOptimalWindowSize(int gameW, int gameH) {
+		double scaleW = static_cast<double>(GetSystemMetrics(SM_CXSCREEN)) * 4.0 / 5.0 / static_cast<double>(gameW);
+		double scaleH = static_cast<double>(GetSystemMetrics(SM_CYSCREEN)) * 4.0 / 5.0 / static_cast<double>(gameH);
+
+		auto scale = (scaleW < scaleH) ? scaleW : scaleH;
+		if (scale >= 1.0) {
+			return { gameW, gameH }; // Clamp to native game resolution to avoid upscaling
+		}
+
+		return { static_cast<LONG>(gameW * scale), static_cast<LONG>(gameH * scale) };
+	}
+
+	SIZE Window::GetMinimumWindowSize(int gameW, int gameH) {
 		double scaleW = static_cast<double>(GetSystemMetrics(SM_CXSCREEN)) * 2.0 / 3.0 / static_cast<double>(gameW);
 		double scaleH = static_cast<double>(GetSystemMetrics(SM_CYSCREEN)) * 2.0 / 3.0 / static_cast<double>(gameH);
 
 		auto scale = (scaleW < scaleH) ? scaleW : scaleH;
 		if (scale >= 1.0) {
-			return { gameW, gameH };
+			return { gameW, gameH }; // Clamp to native game resolution to avoid upscaling
 		}
 
 		return { static_cast<LONG>(gameW * scale), static_cast<LONG>(gameH * scale) };
 	}
 
 #if FVP_GAME_ID >= HOSHINOMEMORIA
-	void Window::UpdateScreen(void* self, int w, int h) {
-		FAVS::Field<DWORD>(self, FAVS::Engine::Fields::ScreenW) = w;
-		FAVS::Field<DWORD>(self, FAVS::Engine::Fields::ScreenH) = h;
+	void Window::UpdateScreen(void* engine, int w, int h) {
+		// Engine uses these values to perform downscaling against game size. Normally, these values
+		// only store screen resolution, but we hijack them and adjust to window size, effectively
+		// lying to game about monitor resolution it's being displayed on.
+		FAVS::Field<DWORD>(engine, FAVS::Engine::Fields::ScreenW) = w;
+		FAVS::Field<DWORD>(engine, FAVS::Engine::Fields::ScreenH) = h;
 
-		HWND hGameWnd = FAVS::Field<HWND>(self, FAVS::Engine::Fields::GameWindowHnd);
+		HWND hGameWnd = FAVS::Field<HWND>(engine, FAVS::Engine::Fields::GameWindowHnd);
 		if (hGameWnd) {
-			SetWindowPos(hGameWnd, NULL, 0, 0, w, h, SWP_NOZORDER);
+			SetWindowPos(hGameWnd, NULL, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER);
 		}
 	}
 
-	void Window::SavePlacement(void* engine, HWND hWnd) {
+	void Window::SaveDimensions(void* engine, HWND hWnd) {
 		RECT rc;
 		if (!GetClientRect(hWnd, &rc)) {
 			DbgPrintVerbose("Unable to retrieve window dimensions; code=" << GetLastError());
@@ -38,7 +53,7 @@ namespace FVP {
 			rc.bottom
 		};
 
-		auto path = GetPlacementPath(engine).string();
+		auto path = GetPersistPath(engine).string();
 		HANDLE hFile = CreateFileA(path.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile == INVALID_HANDLE_VALUE) {
 			DbgPrint("Failed to persist window state; code=" << GetLastError());
@@ -54,8 +69,8 @@ namespace FVP {
 		}
 	}
 
-	bool Window::RestorePlacement(void* engine, HWND hWnd, DWORD dwStyle) {
-		auto path = GetPlacementPath(engine).string();
+	bool Window::RestoreDimensions(void* engine, HWND hWnd, DWORD dwStyle) {
+		auto path = GetPersistPath(engine).string();
 		HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 		if (hFile == INVALID_HANDLE_VALUE) {
 			DbgPrint("Failed to restore window state; code=" << GetLastError());
@@ -82,7 +97,7 @@ namespace FVP {
 			0, 0,
 			rc.right - rc.left,
 			rc.bottom - rc.top,
-			SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED
+			SWP_NOMOVE | SWP_NOZORDER
 		);
 
 		DbgPrintVerbose("Restored window state=" << Util::Describe(data));

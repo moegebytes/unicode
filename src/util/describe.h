@@ -1,7 +1,7 @@
 #pragma once
 
 #include "..\pch.h"
-#include <boost/pfr.hpp>
+#include <boost\pfr.hpp>
 
 namespace Util {
 	template <typename T> requires std::is_aggregate_v<T>

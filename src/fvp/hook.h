@@ -20,8 +20,10 @@ namespace FVP {
 #endif
 		private:
 #if FVP_GAME_ID >= HOSHINOMEMORIA
-			static constexpr UINT WM_RESTORE_PLACEMENT = WM_USER + 0x3BFF;
-			static bool bIsResizing;
+			// Custom message for PrimaryWindowProcA to trigger placement restore.
+			// Engine already occupies WM_USER (0x0400) itself; to be extra careful, we occupy
+			// last message possible (0x7FFF).
+			static constexpr unsigned int WM_RESTORE_SIZE = WM_USER + 0x3BFF;
 #endif
 		};
 	};

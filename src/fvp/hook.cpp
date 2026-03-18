@@ -7,10 +7,6 @@
 #include "..\util\env.h"
 
 namespace FVP {
-#if FVP_GAME_ID >= HOSHINOMEMORIA
-	bool Hook::Engine::bIsResizing = false;
-#endif
-
 	void Hook::Install() {
 		const auto hEngine = (uintptr_t)GetModuleHandle(NULL);
 		HookManager::Install((bool(__thiscall*)(void*, const char*))(hEngine + FAVS::MoviePlayer::InitFilter),
@@ -32,6 +28,9 @@ namespace FVP {
 
 		std::filesystem::path path(fname);
 		if (path.filename().extension() == ".wmv" || path.filename().extension() == ".mpg") {
+			// Wine needs additional setup to render Windows Media Video files (`winetricks wmp9`),
+			// but generally supports VP8 out of the box on most distros. Idea stolen from
+			// NekoNyan's IroSeka patch.
 			path.replace_extension(".webm");
 		}
 
@@ -52,13 +51,14 @@ namespace FVP {
 		}
 
 		LONG lWndStyle = GetWindowLongW(hPrimaryWnd, GWL_STYLE);
-		lWndStyle |= WS_THICKFRAME;
+		lWndStyle |= WS_THICKFRAME; // Enables resizing frame
 		SetWindowLongW(hPrimaryWnd, GWL_STYLE, lWndStyle);
+
+		// Engine stores window style in order to restore it when toggling between fullscreen and windowed mode
 		FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle) = lWndStyle;
 
 		RECT rc = { 
-			0,
-			0,
+			0, 0,
 			FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
 			FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
 		};
@@ -67,14 +67,11 @@ namespace FVP {
 		SetWindowPos(
 			hPrimaryWnd,
 			NULL,
-			0,
-			0,
+			0, 0,
 			rc.right - rc.left,
 			rc.bottom - rc.top,
 			SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED
 		);
-
-		FVP::Window::RestorePlacement(self, hPrimaryWnd, lWndStyle);
 
 		return hGameWnd;
 	}
@@ -89,7 +86,7 @@ namespace FVP {
 			case WM_GETMINMAXINFO: {
 				MINMAXINFO* mmi = (MINMAXINFO*)lParam;
 
-				SIZE defSize = FVP::Window::GetDefaultClientSize(
+				SIZE defSize = FVP::Window::GetMinimumWindowSize(
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
 				);
@@ -99,6 +96,7 @@ namespace FVP {
 				mmi->ptMinTrackSize.x = rc.right - rc.left;
 				mmi->ptMinTrackSize.y = rc.bottom - rc.top;
 
+				// Maximum window size is clamped to native game resolution to prevent upscaling
 				rc = {
 					0, 0,
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
@@ -169,27 +167,19 @@ namespace FVP {
 				return TRUE;
 			}
 
-			case WM_ENTERSIZEMOVE: {
-				bIsResizing = true;
-				break;
-			}
-
 			case WM_EXITSIZEMOVE: {
-				bIsResizing = false;
-
 				RECT rc;
 				GetClientRect(hWnd, &rc);
 
 				if (rc.right > 0 && rc.bottom > 0) {
 					auto pRender = FAVS::Field<void*>(self, FAVS::Engine::Fields::Render);
-
 					if (pRender && FAVS::Field<void*>(pRender, FAVS::Render::Fields::D3DDev)) {
 						FVP::Window::UpdateScreen(self, rc.right, rc.bottom);
 						FVP::Render::ResetDevice(pRender);
 					}
 				}
 
-				FVP::Window::SavePlacement(self, hWnd);
+				FVP::Window::SaveDimensions(self, hWnd);
 				break;
 			}
 
@@ -204,22 +194,15 @@ namespace FVP {
 					break;
 				}
 
-				auto pRender = FAVS::Field<void*>(self, FAVS::Engine::Fields::Render);
-				if (!pRender || !FAVS::Field<void*>(pRender, FAVS::Render::Fields::D3DDev)) {
-					break;
-				}
-
-				auto savedRenderFlag = FAVS::Field<DWORD>(pRender, FAVS::Render::Fields::SavedRenderFlag);
-				auto currentRenderFlag = FAVS::Field<DWORD>(pRender, FAVS::Render::Fields::RenderFlag);
-
-				if (bIsResizing) {
-					HWND hGameWnd = FAVS::Field<HWND>(self, FAVS::Engine::Fields::GameWindowHnd);
-					if (hGameWnd) {
-						SetWindowPos(hGameWnd, NULL, 0, 0, clientW, clientH, SWP_NOZORDER);
-					}
-				} else if (currentRenderFlag == savedRenderFlag) {
-					FVP::Window::UpdateScreen(self, clientW, clientH);
-					FVP::Render::ResetDevice(pRender);
+				// Engine performs downscaling on reset which is rather expensive operation, causing visibile staggering during resize.
+				// To avoid it, we only update game window size here, which causes internal upscaling take over.
+				// This causes bluriness, but// only during actual resize, as once user let's go, WM_EXITSIZEMOVE fires and performs
+				// full reset.
+				// If we performed no action here, the outer window would resize but game window would remain at fixed size, causing
+				// rest to be filled with black. There's no perfect solution here, sadly.
+				HWND hGameWnd = FAVS::Field<HWND>(self, FAVS::Engine::Fields::GameWindowHnd);
+				if (hGameWnd) {
+					SetWindowPos(hGameWnd, NULL, 0, 0, clientW, clientH, SWP_NOZORDER);
 				}
 
 				return HookManager::Call(PrimaryWindowProcA, self, hWnd, uMsg, wParam, lParam);
@@ -235,24 +218,22 @@ namespace FVP {
 					break;
 				}
 
-				auto savedRenderFlag = FAVS::Field<DWORD>(pRender, FAVS::Render::Fields::SavedRenderFlag);
-				auto currentRenderFlag = FAVS::Field<DWORD>(pRender, FAVS::Render::Fields::RenderFlag);
-
-				if (currentRenderFlag == savedRenderFlag || currentRenderFlag == FAVS::Windowed) {
-					PostMessage(hWnd, WM_RESTORE_PLACEMENT, 0, 0);
+				if (FAVS::Field<DWORD>(pRender, FAVS::Render::Fields::RenderFlag) == FAVS::Windowed) {
+					PostMessage(hWnd, WM_RESTORE_SIZE, 0, 0);
 				}
 				break;
 			}
 
-			case WM_RESTORE_PLACEMENT: {
-				if (!FVP::Window::RestorePlacement(self, hWnd, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle))) {
-					SIZE defSize = FVP::Window::GetDefaultClientSize(
+			case WM_RESTORE_SIZE: {
+				if (!FVP::Window::RestoreDimensions(self, hWnd, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle))) {
+					SIZE defSize = FVP::Window::GetOptimalWindowSize(
 						FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
 						FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
 					);
 					RECT rc = { 0, 0, defSize.cx, defSize.cy };
 					AdjustWindowRectEx(&rc, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
 
+					// Ensures window is displayed at the center of screen
 					int cx = rc.right - rc.left;
 					int cy = rc.bottom - rc.top;
 					SetWindowPos(
