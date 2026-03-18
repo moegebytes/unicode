@@ -33,7 +33,7 @@ jobs:
     - run: mv bin\${{matrix.build_configuration}}-x86\*.dll,bin\${{matrix.build_configuration}}-x86\*.pdb .
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ${{matrix.build_configuration}}-${{github.sha}}
         path: |
