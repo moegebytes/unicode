@@ -4,9 +4,8 @@
 
 namespace Util {
 	inline SIZE GetMonitorSize(HWND hWnd) {
-		HMONITOR hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
 		MONITORINFO mi = { sizeof(mi) };
-		if (!GetMonitorInfoA(hMon, &mi)) {
+		if (!GetMonitorInfoA(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &mi)) {
 			return { GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN) };
 		}
 

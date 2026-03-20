@@ -87,27 +87,27 @@ namespace FVP {
 			case WM_GETMINMAXINFO: {
 				MINMAXINFO* mmi = (MINMAXINFO*)lParam;
 
-				SIZE defSize = FVP::Window::GetMinimumWindowSize(
+				SIZE minSize = FVP::Window::GetMinimumWindowSize(
 					hWnd,
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
 				);
-				RECT rc = { 0, 0, defSize.cx, defSize.cy };
-				AdjustWindowRectEx(&rc, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
+				RECT minRc = { 0, 0, minSize.cx, minSize.cy };
+				AdjustWindowRectEx(&minRc, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
 
-				mmi->ptMinTrackSize.x = rc.right - rc.left;
-				mmi->ptMinTrackSize.y = rc.bottom - rc.top;
+				mmi->ptMinTrackSize.x = minRc.right - minRc.left;
+				mmi->ptMinTrackSize.y = minRc.bottom - minRc.top;
 
-				// Maximum window size is clamped to native game resolution to prevent upscaling
-				rc = {
-					0, 0,
+				SIZE maxSize = FVP::Window::GetMaximumWindowSize(
+					hWnd,
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
-				};
-				AdjustWindowRectEx(&rc, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
+				);
+				RECT maxRc = { 0, 0, maxSize.cx, maxSize.cy };
+				AdjustWindowRectEx(&maxRc, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
 
-				mmi->ptMaxTrackSize.x = rc.right - rc.left;
-				mmi->ptMaxTrackSize.y = rc.bottom - rc.top;
+				mmi->ptMaxTrackSize.x = maxRc.right - maxRc.left;
+				mmi->ptMaxTrackSize.y = maxRc.bottom - maxRc.top;
 				return 0;
 			}
 
@@ -115,43 +115,44 @@ namespace FVP {
 				RECT frame = { 0, 0, 0, 0 };
 				AdjustWindowRectEx(&frame, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
 
-				int frameW = frame.right - frame.left;
-				int frameH = frame.bottom - frame.top;
-
-				RECT* client = (RECT*)lParam;
-				int clientW = (client->right - client->left) - frameW;
-				int clientH = (client->bottom - client->top) - frameH;
+				RECT* screen = (RECT*)lParam;
+				SIZE client = {
+					(screen->right - screen->left) - (frame.right - frame.left),
+					(screen->bottom - screen->top) - (frame.bottom - frame.top)
+				};
 
 				switch (wParam) {
 					case WMSZ_LEFT:
 					case WMSZ_RIGHT:
-						clientH = static_cast<int>(clientW / aspect);
+						client.cy = static_cast<int>(client.cx / aspect);
 						break;
 					case WMSZ_TOP:
 					case WMSZ_BOTTOM:
-						clientW = static_cast<int>(clientH * aspect);
+						client.cx = static_cast<int>(client.cy * aspect);
 						break;
 					default: {
-						if (static_cast<double>(clientW) / static_cast<double>(clientH) > aspect) {
-							clientW = static_cast<int>(clientH * aspect);
+						if (static_cast<double>(client.cx) / static_cast<double>(client.cy) > aspect) {
+							client.cx = static_cast<int>(client.cy * aspect);
 						} else {
-							clientH = static_cast<int>(clientW / aspect);
+							client.cy = static_cast<int>(client.cx / aspect);
 						}
 						break;
 					}
 				}
 
-				int totalW = clientW + frameW;
-				int totalH = clientH + frameH;
+				SIZE total = {
+					client.cx + (frame.right - frame.left),
+					client.cy + (frame.bottom - frame.top)
+				};
 
 				switch (wParam) {
 					case WMSZ_LEFT:
 					case WMSZ_TOPLEFT:
 					case WMSZ_BOTTOMLEFT:
-						client->left = client->right - totalW;
+						screen->left = screen->right - total.cx;
 						break;
 					default:
-						client->right = client->left + totalW;
+						screen->right = screen->left + total.cx;
 						break;
 				}
 
@@ -159,10 +160,10 @@ namespace FVP {
 					case WMSZ_TOP:
 					case WMSZ_TOPLEFT:
 					case WMSZ_TOPRIGHT:
-						client->top = client->bottom - totalH;
+						screen->top = screen->bottom - total.cy;
 						break;
 					default:
-						client->bottom = client->top + totalH;
+						screen->bottom = screen->top + total.cy;
 						break;
 				}
 
@@ -190,9 +191,8 @@ namespace FVP {
 					break;
 				}
 
-				int clientW = LOWORD(lParam);
-				int clientH = HIWORD(lParam);
-				if (clientW <= 0 || clientH <= 0) {
+				SIZE client = { LOWORD(lParam), HIWORD(lParam) };
+				if (client.cx <= 0 || client.cy <= 0) {
 					break;
 				}
 
@@ -204,7 +204,7 @@ namespace FVP {
 				// rest to be filled with black. There's no perfect solution here, sadly.
 				HWND hGameWnd = FAVS::Field<HWND>(self, FAVS::Engine::Fields::GameWindowHnd);
 				if (hGameWnd) {
-					SetWindowPos(hGameWnd, NULL, 0, 0, clientW, clientH, SWP_NOZORDER);
+					SetWindowPos(hGameWnd, NULL, 0, 0, client.cx, client.cy, SWP_NOZORDER);
 				}
 
 				return HookManager::Call(PrimaryWindowProcA, self, hWnd, uMsg, wParam, lParam);

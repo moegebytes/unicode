@@ -30,6 +30,19 @@ namespace FVP {
 		return { static_cast<LONG>(gameW * scale), static_cast<LONG>(gameH * scale) };
 	}
 
+	SIZE Window::GetMaximumWindowSize(HWND hWnd, int gameW, int gameH) {
+		SIZE monitor = Util::GetMonitorSize(hWnd);
+		double scaleW = static_cast<double>(monitor.cx) * 96.0 / 100.0 / static_cast<double>(gameW);
+		double scaleH = static_cast<double>(monitor.cy) * 96.0 / 100.0 / static_cast<double>(gameH);
+
+		auto scale = (scaleW < scaleH) ? scaleW : scaleH;
+		if (scale >= 1.0) {
+			return { gameW, gameH }; // Use game resolution if it fits on screen
+		}
+
+		return { static_cast<LONG>(gameW * scale), static_cast<LONG>(gameH * scale) };
+	}
+
 #if FVP_GAME_ID >= HOSHINOMEMORIA
 	void Window::UpdateScreen(void* engine, int w, int h) {
 		// Engine uses these values to perform downscaling against game size. Normally, these values
