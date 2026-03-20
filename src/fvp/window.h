@@ -6,8 +6,8 @@
 namespace FVP {
 	class Window {
 	public:
-		static SIZE GetOptimalWindowSize(int gameW, int gameH);
-		static SIZE GetMinimumWindowSize(int gameW, int gameH);
+		static SIZE GetOptimalWindowSize(HWND hWnd, int gameW, int gameH);
+		static SIZE GetMinimumWindowSize(HWND hWnd, int gameW, int gameH);
 
 #if FVP_GAME_ID >= HOSHINOMEMORIA
 		static void UpdateScreen(void* engine, int w, int h);

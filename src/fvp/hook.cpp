@@ -5,6 +5,7 @@
 #include "render.h"
 #include "..\hook\manager.h"
 #include "..\util\env.h"
+#include "..\util\monitor.h"
 
 namespace FVP {
 	void Hook::Install() {
@@ -87,6 +88,7 @@ namespace FVP {
 				MINMAXINFO* mmi = (MINMAXINFO*)lParam;
 
 				SIZE defSize = FVP::Window::GetMinimumWindowSize(
+					hWnd,
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
 					FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
 				);
@@ -219,7 +221,17 @@ namespace FVP {
 				}
 
 				if (FAVS::Field<DWORD>(pRender, FAVS::Render::Fields::RenderFlag) == FAVS::Windowed) {
-					PostMessage(hWnd, WM_RESTORE_SIZE, 0, 0);
+					// Queue up WM_RESTORE_SIZE for execution at the nearest convinience. This intentionally does not use
+					// SendMessage because we receive WM_SHOWWINDOW from inside of engine's ResetScreen routine, which
+					// resets (ScreenW,ScreenH) we hijack in Window::UpdateScreen to equal (GameW,GameH). By using asynchronous
+					// PostMessage, we ensure that our WM_RESTORE_SIZE is only executed _after_ engine is done with ResetScreen
+					// routine and message pump resumes.
+					// The trade-off cost of this approach is very short visual glitch, where game window is not scaled down to
+					// match primary window smaller size. NekoNyan's original approach hijacks ResetScreen directly via inline
+					// assembly patch to avoid this.
+					// Also, W variant is explicitly used here because window handle we are using has been previously explicitly
+					// adjusted to be Unicode via Win32 hooks we install.
+					PostMessageW(hWnd, WM_RESTORE_SIZE, 0, 0);
 				}
 				break;
 			}
@@ -227,6 +239,7 @@ namespace FVP {
 			case WM_RESTORE_SIZE: {
 				if (!FVP::Window::RestoreDimensions(self, hWnd, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle))) {
 					SIZE defSize = FVP::Window::GetOptimalWindowSize(
+						hWnd,
 						FAVS::Field<int>(self, FAVS::Engine::Fields::GameW),
 						FAVS::Field<int>(self, FAVS::Engine::Fields::GameH)
 					);
@@ -234,17 +247,12 @@ namespace FVP {
 					AdjustWindowRectEx(&rc, FAVS::Field<DWORD>(self, FAVS::Engine::Fields::DwStyle), FALSE, 0);
 
 					// Ensures window is displayed at the center of screen
-					int cx = rc.right - rc.left;
-					int cy = rc.bottom - rc.top;
-					SetWindowPos(
-						hWnd,
-						NULL,
-						(GetSystemMetrics(SM_CXSCREEN) - cx) / 2,
-						(GetSystemMetrics(SM_CYSCREEN) - cy) / 2,
-						cx,
-						cy,
-						SWP_NOZORDER
-					);
+					SIZE monitor = Util::GetMonitorSize(hWnd);
+					SIZE client = {
+						rc.right - rc.left,
+						rc.bottom - rc.top
+					};
+					SetWindowPos(hWnd, NULL, (monitor.cx - client.cx) / 2, (monitor.cy - client.cy) / 2, client.cx, client.cy, SWP_NOZORDER);
 				}
 
 				RECT rc;

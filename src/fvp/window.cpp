@@ -1,11 +1,13 @@
 #include "..\pch.h"
 #include "window.h"
 #include "..\util\describe.h"
+#include "..\util\monitor.h"
 
 namespace FVP {
-	SIZE Window::GetOptimalWindowSize(int gameW, int gameH) {
-		double scaleW = static_cast<double>(GetSystemMetrics(SM_CXSCREEN)) * 4.0 / 5.0 / static_cast<double>(gameW);
-		double scaleH = static_cast<double>(GetSystemMetrics(SM_CYSCREEN)) * 4.0 / 5.0 / static_cast<double>(gameH);
+	SIZE Window::GetOptimalWindowSize(HWND hWnd, int gameW, int gameH) {
+		SIZE monitor = Util::GetMonitorSize(hWnd);
+		double scaleW = static_cast<double>(monitor.cx) * 4.0 / 5.0 / static_cast<double>(gameW);
+		double scaleH = static_cast<double>(monitor.cy) * 4.0 / 5.0 / static_cast<double>(gameH);
 
 		auto scale = (scaleW < scaleH) ? scaleW : scaleH;
 		if (scale >= 1.0) {
@@ -15,9 +17,10 @@ namespace FVP {
 		return { static_cast<LONG>(gameW * scale), static_cast<LONG>(gameH * scale) };
 	}
 
-	SIZE Window::GetMinimumWindowSize(int gameW, int gameH) {
-		double scaleW = static_cast<double>(GetSystemMetrics(SM_CXSCREEN)) * 2.0 / 3.0 / static_cast<double>(gameW);
-		double scaleH = static_cast<double>(GetSystemMetrics(SM_CYSCREEN)) * 2.0 / 3.0 / static_cast<double>(gameH);
+	SIZE Window::GetMinimumWindowSize(HWND hWnd, int gameW, int gameH) {
+		SIZE monitor = Util::GetMonitorSize(hWnd);
+		double scaleW = static_cast<double>(monitor.cx) * 2.0 / 3.0 / static_cast<double>(gameW);
+		double scaleH = static_cast<double>(monitor.cy) * 2.0 / 3.0 / static_cast<double>(gameH);
 
 		auto scale = (scaleW < scaleH) ? scaleW : scaleH;
 		if (scale >= 1.0) {
