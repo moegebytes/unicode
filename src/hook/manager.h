@@ -84,7 +84,7 @@ private:
 	inline static std::unordered_map<void*, void*> HolderMap{};
 
 	template <typename Fn>
-	static void Disable(Fn handler) {
+	static void Disable(Fn handler) noexcept {
 		Fn origin = GetOrigin(handler);
 		DetourTransactionBegin();
 		DetourUpdateThread(GetCurrentThread());
@@ -93,7 +93,7 @@ private:
 	}
 
 	template <typename Fn>
-	static void Enable(Fn &func, Fn handler) {
+	static void Enable(Fn &func, Fn handler) noexcept {
 		DetourTransactionBegin();
 		DetourUpdateThread(GetCurrentThread());
 		DetourAttach(&(void* &)func, handler);

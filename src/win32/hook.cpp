@@ -186,16 +186,16 @@ namespace Win32 {
 
 		DbgPrintVerbose("Intercepted LoadStringA with uID=" << uID);
 
-		wchar_t lpWideBuffer[MAX_PATH] = {};
-		if (LoadStringW(hInstance, uID, lpWideBuffer, MAX_PATH) <= 0) {
+		auto lpWideBuffer = std::make_unique<wchar_t[]>(cchBufferMax);
+		if (LoadStringW(hInstance, uID, lpWideBuffer.get(), cchBufferMax) <= 0) {
 			return HookManager::Call(LoadStringA, hInstance, uID, lpBuffer, cchBufferMax);
 		}
 
-		auto lpNarrowBuffer = Util::WideToNarrow(CP_SHIFT_JIS, lpWideBuffer);
-		auto lpNarrowBufferLen = strlen(lpNarrowBuffer.get());
+		auto lpNarrowBuffer = Util::WideToNarrow(CP_SHIFT_JIS, lpWideBuffer.get());
+		int lpNarrowBufferLen = static_cast<int>(strlen(lpNarrowBuffer.get()));
 
-		strncpy_s(lpBuffer, cchBufferMax, lpNarrowBuffer.get(), lpNarrowBufferLen);
-		return lpNarrowBufferLen;
+		strncpy_s(lpBuffer, cchBufferMax, lpNarrowBuffer.get(), _TRUNCATE); // Replicate LoadStringA's silent truncation behavior
+		return min(lpNarrowBufferLen, cchBufferMax - 1);
 	}
 
 	HMMIO WINAPI Hook::mmioOpenA(LPSTR pszFileName, LPMMIOINFO pmmioinfo, DWORD fdwOpen) {
@@ -204,7 +204,9 @@ namespace Win32 {
 		}
 
 		DbgPrintVerbose("Intercepted mmioOpenA with pszFileName=" << pszFileName);
-		return mmioOpenW(Util::NarrowToWide(CP_SHIFT_JIS, pszFileName).get(), pmmioinfo, fdwOpen);
+
+		auto pszWideFileName = Util::NarrowToWide(CP_SHIFT_JIS, pszFileName);
+		return mmioOpenW(pszWideFileName.get(), pmmioinfo, fdwOpen);
 	}
 
 	HFONT WINAPI Hook::CreateFontA(int cHeight, int cWidth, int cEscapement, int cOrientation, int cWeight, DWORD bItalic, DWORD bUnderline,

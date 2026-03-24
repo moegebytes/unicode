@@ -1,8 +1,8 @@
 #include <winres.h>
 
 VS_VERSION_INFO VERSIONINFO
-	FILEVERSION 1,6,2,95
-	PRODUCTVERSION 1,6,2,0
+	FILEVERSION 1,6,3,95
+	PRODUCTVERSION 1,6,3,0
 	FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
 	FILEFLAGS VS_FF_DEBUG
@@ -18,10 +18,10 @@ BEGIN
 		BEGIN
 			VALUE "CompanyName", "Moegebytes"
 			VALUE "FileDescription", "Unicode compatibility layer for FVP"
-			VALUE "FileVersion", "1.6.2.95"
+			VALUE "FileVersion", "1.6.3.95"
 			VALUE "LegalCopyright", "Copyright (C) 2026 Moegebytes"
 			VALUE "ProductName", "ShinkUnicode"
-			VALUE "ProductVersion", "1.6.2"
+			VALUE "ProductVersion", "1.6.3"
 		END
 	END
 	BLOCK "VarFileInfo"

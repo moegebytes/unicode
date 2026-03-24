@@ -111,7 +111,7 @@ namespace FAVS {
 		static constexpr uintptr_t SysMovie = 0x3B120; // char __thiscall(Scene*, Variant[])
 		static constexpr uintptr_t SysMovieStop = 0x3B300; // int __stdcall(Variant[])
 		static constexpr uintptr_t SysRand = 0x37A20; // int __thiscall(Scene*, Variant[])
-		static constexpr uintptr_t SysTextFontName = 0x43DB30; // void __thiscall(Scene*, Variant[])
+		static constexpr uintptr_t SysTextFontName = 0x3DB30; // void __thiscall(Scene*, Variant[])
 		static constexpr uintptr_t SysWindowMode = 0x3D0D0; // int __thiscall(Scene*, Variant[])
 #endif
 	};

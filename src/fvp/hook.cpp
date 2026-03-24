@@ -198,7 +198,7 @@ namespace FVP {
 
 				// Engine performs downscaling on reset which is rather expensive operation, causing visibile staggering during resize.
 				// To avoid it, we only update game window size here, which causes internal upscaling take over.
-				// This causes bluriness, but// only during actual resize, as once user let's go, WM_EXITSIZEMOVE fires and performs
+				// This causes bluriness, but only during actual resize, as once user let's go, WM_EXITSIZEMOVE fires and performs
 				// full reset.
 				// If we performed no action here, the outer window would resize but game window would remain at fixed size, causing
 				// rest to be filled with black. There's no perfect solution here, sadly.
@@ -221,7 +221,7 @@ namespace FVP {
 				}
 
 				if (FAVS::Field<DWORD>(pRender, FAVS::Render::Fields::RenderFlag) == FAVS::Windowed) {
-					// Queue up WM_RESTORE_SIZE for execution at the nearest convinience. This intentionally does not use
+					// Queue up WM_RESTORE_SIZE for execution at the nearest convenience. This intentionally does not use
 					// SendMessage because we receive WM_SHOWWINDOW from inside of engine's ResetScreen routine, which
 					// resets (ScreenW,ScreenH) we hijack in Window::UpdateScreen to equal (GameW,GameH). By using asynchronous
 					// PostMessage, we ensure that our WM_RESTORE_SIZE is only executed _after_ engine is done with ResetScreen
