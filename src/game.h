@@ -25,21 +25,21 @@
  *   ASTRALFI_HD            - AstralAir no Shiroki Eien Finale HD
  */
 #define WIZANNIVERSARY          1
-#define WIZANNIVERSARY_FUNTA01  2
-#define HAPPY_MARGUERITE        3
-#define HOSHINOMEMORIA          4
-#define HOSHIMEMO_EH            5
-#define IROSEKA_WORLD           6
-#define IROHIKA_WORLD           7
+#define WIZANNIVERSARY_FUNTA01  WIZANNIVERSARY
+#define HAPPY_MARGUERITE        HAPPY_MARGUERITE
+#define HOSHINOMEMORIA          2
+#define HOSHIMEMO_EH            HOSHINOMEMORIA
+#define IROSEKA_WORLD           4
+#define IROHIKA_WORLD           IROSEKA_WORLD
 #define ASTRALAIR_WE            8
-#define AKASEKA_WELWLF          9
-#define ASTRALAIR_FINALE        10
-#define SAKURA_MOYU             11
-#define HOSHIMEMO_HD            12
-#define IROSEKA_HD              13
-#define IROHIKA_HD              14
-#define AKASEKA_HD              15
-#define ASTRALWE_HD             16
-#define ASTRALFI_HD             17
+#define AKASEKA_WELWLF          IROSEKA_WORLD
+#define ASTRALAIR_FINALE        ASTRALAIR_WE
+#define SAKURA_MOYU             ASTRALAIR_WE
+#define HOSHIMEMO_HD            ASTRALAIR_WE
+#define IROSEKA_HD              ASTRALAIR_WE
+#define IROHIKA_HD              ASTRALAIR_WE
+#define AKASEKA_HD              ASTRALAIR_WE
+#define ASTRALWE_HD             ASTRALAIR_WE
+#define ASTRALFI_HD             ASTRALAIR_WE
 
 #define FVP_GAME_ID IROHIKA_HD
