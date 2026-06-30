@@ -30,19 +30,20 @@ Resizable game window is only supported for `HOSHINOMEMORIA` and newer games, ol
 ## Building
 
 ```
-git submodule update --init
-MSBuild.exe ShinkUnicode.sln -p:Configuration=Release -p:Platform=Win32
+MSBuild Unicode.sln -p:Configuration=Release -p:Platform=Win32
 ```
 
-Output: `bin/Release-x86/ShinkUnicode.dll`
+Output: `bin/Release-x86/ShinkUnicode.dll` and `bin/Release-x86/AInjector.exe`
 
 ## Usage
 
-Use [SetDLL](https://github.com/microsoft/detours/wiki/SampleSetdll) from Microsoft Detours to inject the DLL into the game executable:
+Use `AInjector.exe` tool to patch game executable so it loads new DLL on startup:
 
 ```
-setdll /d:ShinkUnicode.dll GameExecutable.exe
+AInjector GameExecutable.exe [ShinkUnicode.dll]
 ```
+
+The injector tool is fully compatible with [SetDLL](https://github.com/microsoft/detours/wiki/SampleSetdll) from Microsoft Detours.
 
 Optionally, place `.ttf` or `.otf` font files in a `font/` directory next to the game executable to load custom fonts.
 

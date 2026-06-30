@@ -4,6 +4,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShinkUnicode", "ShinkUnicode.vcxproj", "{B4E0C658-C477-43D3-ADB9-1B0C2666EAFC}"
+Project("{45BC3481-A866-41B4-AAA5-FDF91005A913}") = "AInjector", "AInjector.vcxproj", "{AD43F691-146B-49B0-8B3A-D840FB5FBEBC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +16,10 @@ Global
 		{B4E0C658-C477-43D3-ADB9-1B0C2666EAFC}.Debug|Win32.Build.0 = Debug|Win32
 		{B4E0C658-C477-43D3-ADB9-1B0C2666EAFC}.Release|Win32.ActiveCfg = Release|Win32
 		{B4E0C658-C477-43D3-ADB9-1B0C2666EAFC}.Release|Win32.Build.0 = Release|Win32
+		{AD43F691-146B-49B0-8B3A-D840FB5FBEBC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AD43F691-146B-49B0-8B3A-D840FB5FBEBC}.Debug|Win32.Build.0 = Debug|Win32
+		{AD43F691-146B-49B0-8B3A-D840FB5FBEBC}.Release|Win32.ActiveCfg = Release|Win32
+		{AD43F691-146B-49B0-8B3A-D840FB5FBEBC}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

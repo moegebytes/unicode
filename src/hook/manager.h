@@ -74,7 +74,7 @@ public:
 	}
 
 	static void DetachAll() noexcept {
-		for (const auto &[key, value] : HolderMap) {
+		for (const auto &[key, value]: HolderMap) {
 			Disable(key);
 		}
 		HolderMap.clear();

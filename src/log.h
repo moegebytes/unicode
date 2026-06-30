@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sstream>
+
 #define Nullable(a) (a ? a : "<NULL>")
 #define DbgPrint(a) { std::wstringstream ss; ss << "[" << __FUNCTION__ << "] " << a; OutputDebugString(ss.str().c_str()); }
 
