@@ -14,6 +14,8 @@ namespace Win32 {
 		HookManager::Install(
 			(HANDLE(WINAPI *) (LPCSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE))GetProcAddress(hKernel32, "CreateFileA"),
 			CreateFileA);
+		HookManager::Install((BOOL(WINAPI *) (LPCSTR))GetProcAddress(hKernel32, "DeleteFileA"), DeleteFileA);
+		HookManager::Install((BOOL(WINAPI *) (LPCSTR, LPCSTR, BOOL))GetProcAddress(hKernel32, "CopyFileA"), CopyFileA);
 		HookManager::Install((int(WINAPI *) (UINT, DWORD, LPCCH, int, LPWSTR, int))GetProcAddress(hKernel32, "MultiByteToWideChar"),
 			MultiByteToWideChar);
 		HookManager::Install((int(WINAPI *) (UINT, DWORD, LPCWCH, int, LPSTR, int, LPCCH, LPBOOL))GetProcAddress(hKernel32, "WideCharToMultiByte"),
@@ -73,6 +75,19 @@ namespace Win32 {
 		return CreateFileW(
 			Util::NarrowToWide(CP_SHIFT_JIS, lpFileName).get(), dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
 			dwFlagsAndAttributes, hTemplateFile);
+	}
+
+	BOOL WINAPI Hook::DeleteFileA(LPCSTR lpFileName) {
+		DbgPrintVerbose("Intercepted DeleteFileA with lpFileName=" << lpFileName);
+
+		return DeleteFileW(Util::NarrowToWide(CP_SHIFT_JIS, lpFileName).get());
+	}
+
+	BOOL WINAPI Hook::CopyFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, BOOL bFailIfExists) {
+		DbgPrintVerbose("Intercepted CopyFileA with lpExistingFileName=" << lpExistingFileName << ",lpNewFileName=" << lpNewFileName);
+
+		return CopyFileW(Util::NarrowToWide(CP_SHIFT_JIS, lpExistingFileName).get(), Util::NarrowToWide(CP_SHIFT_JIS, lpNewFileName).get(),
+			bFailIfExists);
 	}
 
 	int WINAPI Hook::MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCCH lpMultiByteStr, int cbMultiByte, LPWSTR lpWideCharStr, int ccWideChar) {

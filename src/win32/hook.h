@@ -15,6 +15,8 @@ namespace Win32 {
 		static HANDLE WINAPI CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes,
 			DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile
 		);
+		static BOOL WINAPI DeleteFileA(LPCSTR lpFileName);
+		static BOOL WINAPI CopyFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, BOOL bFailIfExists);
 		static int WINAPI MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCCH lpMultiByteStr, int cbMultiByte, LPWSTR lpWideCharStr, int ccWideChar);
 		static int WINAPI WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte,
 			LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar
