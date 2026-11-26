@@ -56,6 +56,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0601;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)vendor\detours\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -107,6 +108,7 @@
   </ItemGroup>
   <ItemGroup Label="Source">
     <ClCompile Include="tool\injector\winmain.cpp" />
+    <ClCompile Include="tool\injector\log.cpp" />
     <ClCompile Include="tool\injector\core\injector.cpp">
       <PrecompiledHeaderFile>..\pch.h</PrecompiledHeaderFile>
     </ClCompile>

@@ -42,6 +42,7 @@ namespace Win32 {
 		public:
 			struct EnumFontParam {
 				FONTENUMPROCA lpProc;
+				HDC hDC;
 				LPARAM lParam;
 			};
 

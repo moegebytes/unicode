@@ -56,6 +56,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0601;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)vendor\detours\src;$(SolutionDir)vendor\pfr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ControlFlowGuard>false</ControlFlowGuard>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -103,6 +104,7 @@
     <ClInclude Include="src\dllmain.h" />
     <ClInclude Include="src\hook\manager.h" />
     <ClInclude Include="src\win32\hook.h" />
+    <ClInclude Include="src\win32\font.h" />
     <ClInclude Include="src\fvp\font.h" />
     <ClInclude Include="src\fvp\hook.h" />
     <ClInclude Include="src\fvp\render.h" />
@@ -112,6 +114,7 @@
     <ClInclude Include="src\util\locale.h" />
     <ClInclude Include="src\util\env.h" />
     <ClInclude Include="src\util\monitor.h" />
+    <ClInclude Include="src\util\font.h" />
     <ClInclude Include="src\pch.h" />
   </ItemGroup>
   <ItemGroup Label="Vendor">
@@ -119,7 +122,14 @@
   </ItemGroup>
   <ItemGroup Label="Source">
     <ClCompile Include="src\dllmain.cpp" />
+    <ClCompile Include="src\log.cpp" />
     <ClCompile Include="src\win32\hook.cpp">
+      <PrecompiledHeaderFile>..\pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="src\win32\font.cpp">
+      <PrecompiledHeaderFile>..\pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="src\util\font.cpp">
       <PrecompiledHeaderFile>..\pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\fvp\font.cpp">

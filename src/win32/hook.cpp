@@ -3,6 +3,7 @@
 #include "..\hook\manager.h"
 #include "..\util\text.h"
 #include "..\util\locale.h"
+#include "font.h"
 
 namespace Win32 {
 	void Hook::Install() {
@@ -95,7 +96,7 @@ namespace Win32 {
 			return HookManager::Call(MultiByteToWideChar, CodePage, dwFlags, lpMultiByteStr, cbMultiByte, lpWideCharStr, ccWideChar);
 		}
 
-		DbgPrintVerbose("Intercepted MultiByteToWideChar with CodePage=" << CodePage << ",lpMultiByteStr=" << lpMultiByteStr);
+		DbgPrintVerbose("Intercepted MultiByteToWideChar with CodePage=" << CodePage << ",lpMultiByteStr=" << Log::BoundedText(lpMultiByteStr, cbMultiByte));
 		return HookManager::Call(MultiByteToWideChar, (UINT)CP_SHIFT_JIS, dwFlags, lpMultiByteStr, cbMultiByte, lpWideCharStr, ccWideChar);
 	}
 
@@ -107,13 +108,13 @@ namespace Win32 {
 				lpDefaultChar, lpUsedDefaultChar);
 		}
 
-		DbgPrintVerbose("Intercepted WideCharToMultiByte with CodePage=" << CodePage << ",lpWideCharStr=" << lpWideCharStr);
+		DbgPrintVerbose("Intercepted WideCharToMultiByte with CodePage=" << CodePage << ",lpWideCharStr=" << Log::BoundedText(lpWideCharStr, cchWideChar));
 		return HookManager::Call(WideCharToMultiByte, (UINT)CP_SHIFT_JIS, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr, cbMultiByte, 
 			lpDefaultChar, lpUsedDefaultChar);
 	}
 
 	int WINAPI Hook::MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) {
-		DbgPrintVerbose("Intercepted MessageBoxA with lpText=" << Nullable(lpText) << ",lpCaption=" << Nullable(lpCaption));
+		DbgPrintVerbose("Intercepted MessageBoxA with lpText=" << lpText << ",lpCaption=" << lpCaption);
 
 		auto lpWideText = lpText ? Util::NarrowToWide(CP_SHIFT_JIS, lpText) : nullptr;
 		auto lpWideCaption = lpCaption ? Util::NarrowToWide(CP_SHIFT_JIS, lpCaption) : nullptr;
@@ -167,7 +168,7 @@ namespace Win32 {
 				hInstance, lpParam);
 		}
 
-		DbgPrintVerbose("Intercepted CreateWindowExA with lpClassName=" << lpClassName << ",lpWindowName=" << Nullable(lpWindowName));
+		DbgPrintVerbose("Intercepted CreateWindowExA with lpClassName=" << lpClassName << ",lpWindowName=" << lpWindowName);
 
 		auto lpWideClassName = Util::NarrowToWide(CP_SHIFT_JIS, lpClassName);
 		auto lpWideWindowName = lpWindowName ? Util::NarrowToWide(CP_SHIFT_JIS, lpWindowName) : nullptr;
@@ -227,7 +228,7 @@ namespace Win32 {
 	HFONT WINAPI Hook::CreateFontA(int cHeight, int cWidth, int cEscapement, int cOrientation, int cWeight, DWORD bItalic, DWORD bUnderline,
 		DWORD bStrikeOut, DWORD iCharSet, DWORD iOutPrecision, DWORD iClipPrecision, DWORD iQuality, DWORD iPitchAndFamily, LPCSTR pszFaceName
 	) {
-		DbgPrintVerbose("Intercepted CreateFontA with iCharSet=" << iCharSet << ",pszFaceName=" << Nullable(pszFaceName));
+		DbgPrintVerbose("Intercepted CreateFontA with iCharSet=" << iCharSet << ",pszFaceName=" << pszFaceName);
 
 		auto pszWideFaceName = pszFaceName ? Util::NarrowToWide(CP_SHIFT_JIS, pszFaceName) : nullptr;
 
@@ -238,12 +239,20 @@ namespace Win32 {
 	int WINAPI Hook::EnumFontFamiliesExA(HDC hdc, LPLOGFONTA lpLogfont, FONTENUMPROCA lpProc, LPARAM lParam, DWORD dwFlags) {
 		DbgPrintVerbose("Intercepted EnumFontFamiliesExA with lfCharSet=" << lpLogfont->lfCharSet);
 
+		lpLogfont->lfCharSet = SHIFTJIS_CHARSET; // Must match with CreateFontA behavior
+
+		std::unique_ptr<std::remove_pointer_t<HDC>, decltype([](HDC h) { DeleteDC(h); })> hDC(CreateCompatibleDC(NULL));
+		if (!hDC) {
+			DbgPrint("Failed to create device context, skipping face name translation; code=" << GetLastError());
+			return HookManager::Call(EnumFontFamiliesExA, hdc, lpLogfont, lpProc, lParam, dwFlags);
+		}
+
 		Callback::EnumFontParam sParam = {
 			lpProc,
-			lParam
+			hDC.get(),
+			lParam,
 		};
 
-		lpLogfont->lfCharSet = ANSI_CHARSET; // Generally, all fonts supporting SHIFTJIS_CHARSET also support ANSI_CHARSET
 		return HookManager::Call(EnumFontFamiliesExA, hdc, lpLogfont, Callback::EnumFontFamExProcA, (LPARAM)&sParam, dwFlags);
 	}
 }
@@ -251,17 +260,32 @@ namespace Win32 {
 namespace Win32 {
 	int CALLBACK Hook::Callback::EnumFontFamExProcA(const LOGFONTA* lpfnta, const TEXTMETRICA* lpntme, DWORD FontType, LPARAM lParam) {
 		ENUMLOGFONTEXA* lpelfe = (ENUMLOGFONTEXA*)lpfnta;
+		EnumFontParam* sParam = (EnumFontParam*)lParam;
 
-		if (lpelfe->elfLogFont.lfFaceName[0] != '@') {
-			DbgPrintVerbose("Enumerated font with lfFaceName=" << lpelfe->elfLogFont.lfFaceName << ",elfFullName=" <<
-				(CHAR*)lpelfe->elfFullName << ",elfScript=" << (CHAR*)lpelfe->elfScript);
+		// Matches engine behavior; technically leaks FVP internals but we already do that in RegisterClassExA
+		// so this much should be fine.
+		if (!(FontType & TRUETYPE_FONTTYPE) || lpelfe->elfLogFont.lfFaceName[0] == '@') {
+			return 1;
 		}
 
-		memset(lpelfe->elfScript, 0, LF_FACESIZE); // It's fine if it gets optimized away, string below is zero-terminated
-		static const unsigned char scriptJapanese[] = { 0x93, 0xFA, 0x96, 0x7B, 0x8C, 0xEA, 0x00 }; // 日本語\0
-		memcpy(lpelfe->elfScript, scriptJapanese, 7);
+		DbgPrintVerbose("Enumerated font with lfFaceName=" << lpelfe->elfLogFont.lfFaceName << ",elfFullName=" <<
+			(CHAR*)lpelfe->elfFullName << ",elfScript=" << (CHAR*)lpelfe->elfScript);
 
-		EnumFontParam* sParam = (EnumFontParam*)lParam;
+		// Font script is always returned according to UI language, so it needs to be converted separately
+		// to match what Japanese locale would return
+		strcpy_s((CHAR*)lpelfe->elfScript, LF_FACESIZE, "\x93\xFA\x96\x7B\x8C\xEA"); // 日本語
+
+		// Should not happen as we never dispatch if failed to create above
+		assert(sParam->hDC != NULL);
+
+		// A rather complex beast, responsible for replacing font name with its Japanese variant; same logic applies as
+		// for script, except we can't hardcode it here.
+		CHAR szFaceName[LF_FACESIZE];
+		if (Font::JapaneseFaceName(sParam->hDC, &lpelfe->elfLogFont, szFaceName)) {
+			DbgPrintVerbose("Renamed font with lfFaceName=" << lpelfe->elfLogFont.lfFaceName << " to szFaceName=" << szFaceName);
+			strcpy_s(lpelfe->elfLogFont.lfFaceName, LF_FACESIZE, szFaceName);
+		}
+
 		return sParam->lpProc((LOGFONTA*)lpelfe, lpntme, FontType, sParam->lParam);
 	}
 }
